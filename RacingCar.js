@@ -1,11 +1,11 @@
 var myTimer;
 var defaultRotatValue = 30;
 var defaultSpeedIncriment = 0.1;
-var defaultSpeedStart = 0.3;
+var defaultSpeedStart = 0.6;
 var timeCount = 0;
 var car = { x: 130, y: 65 };
 var lineLength = 30;
-var angle = 0;
+var angle = 0; // wat
 var c ;
 var ctx;
 var Bane = new Image();
@@ -48,7 +48,7 @@ function newGame() {
     angle = 0;
     speed = defaultSpeedStart;
     clearInterval(myTimer);
-    myTimer = setInterval(Timer, 20);
+    myTimer = setInterval(Timer, 5);
 
     //----------Genetic Algorithm Create New Population her---------------
     GA_CreateNewPopulation();
@@ -289,6 +289,7 @@ function drawEveryThing() {
     ctx.fillText("Distance right = " + Math.ceil(distantRight), xpos, ypos + 60);
     ctx.fillText("Time = " + timeCount, xpos, ypos + 80);
     ctx.fillText("Speed = " + speed.toFixed(2), xpos, ypos + 100);
+    // drawCirclesOnTrack();
 
     //Collision control - Collision control - Collision control - Collision control
     //Collision control - Collision control - Collision control - Collision control
@@ -306,5 +307,27 @@ function drawEveryThing() {
     else
     {
         aktuelColor = "black";
+    }
+}
+
+function drawCirclesOnTrack() {
+    const circlePositions = [
+        { x: 150, y: 100 },
+        { x: 420, y: 250 },
+        { x: 650, y: 60 },
+        { x: 720, y: 300 },
+        { x: 150, y: 300 },
+    ];
+    const circleRadius = 80; // Increased radius for larger circles
+
+    ctx.strokeStyle = "blue"; // Set color for the circle outlines
+    ctx.lineWidth = 3; // Set the line width for the outlines
+    for (let i = 0; i < circlePositions.length; i++) {
+        const pos = circlePositions[i];
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, circleRadius, 0, Math.PI * 2); // Draw the circle outline
+        ctx.stroke();
+        ctx.closePath();
+
     }
 }

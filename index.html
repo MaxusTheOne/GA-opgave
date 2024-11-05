@@ -23,7 +23,7 @@
         Your browser does not support the HTML5 canvas tag.
       </canvas>
       <br />
-      <img src="GA network with JS code.png" width="800" />
+      <!-- <img src="GA network with JS code.png" width="800" /> -->
     </td>
   </tr>
 </table>
@@ -44,10 +44,22 @@
   //    function so that you can get started right away.
   //------------------------------------------------------------------
   var population = [];
-  var populationNumber = 30;
-  var numberOfGenesInChromosome = 8;
+  var populationNumber = 6;
+  var numberOfGenesInChromosome = 3;
   var activePopulation = -1;
+  var generation = -1;
   var maxTimePrGame = 3000;
+  let lastFitness = 0;
+  let currentFitness = 0;
+  let lastGenWinners = [];
+  let currentCircle = 0
+  let circlePlacement = [
+        { x: 150, y: 100 },
+        { x: 420, y: 250 },
+        { x: 650, y: 60 },
+        { x: 720, y: 300 },
+        { x: 150, y: 300 }
+    ]
 
   function GA_DriveCar_One_Time_Step() // denne bliver kaldt hvert 20. millisekund
   {
@@ -67,18 +79,31 @@
     try
     {
       // ### Find en bedre måde at udregne outRotate ud fra data som speed og distance samt gener
-      var outRotate = population[0].chromosome[0];
+      const geneLeft = population[activePopulation].chromosome[0];
+      const geneRight = population[activePopulation].chromosome[1];
+      
+      
 
       // ### Find en bedre måde at udregne outSpeed ud fra data som speed og distance samt gener
-      var outSpeed = population[0].chromosome[1];
+      var outSpeed = speed * population[0].chromosome[1]; //Commented out rn
 
       //Postive is Right and Negative is Left.
+      const outRotate = (geneRight * distantLeft + geneLeft * distantRight) / 2;
+      // if (distantLeft < distantRight)
+      // {
+      //   outRotate = rotateFromLeft;
+      // }
+      // else
+      // {
+      //   outRotate = -rotateFromRight;
+      // }
       rotateCar(outRotate);
+      
       //Positive is Faster and Negative is Slower.
       speedChange(outSpeed);
 
       // ### for hvert step, undersøg om bilen har nået et vist del-mål (som bidrager til dens fitness)
-
+      calculateFitnessForCar();
       DrawStatus();
     }
     catch (err)
@@ -89,32 +114,75 @@
   }
 
   // 
-  // ### Lav noget kode som måler fitness (altså, hvor bilen får
-  // poeng for at have kommet et vist stykke fremad)
+  // ++kode som måler fitness (altså, hvor bilen får
+  // point for at have kommet et vist stykke fremad)
+  function calculateFitnessForCar()
+  {
+    if (detectCircle()){
+      currentFitness += 10;
+    }
+  }
+
+  function detectCircle(){
+    const circleRadius = 100
+    if (Math.abs(car.x - circlePlacement[currentCircle].x) < circleRadius && Math.abs(car.y - circlePlacement[currentCircle].y) < circleRadius){
+      currentCircle++;
+      console.log("Circle detected");
+      
+      if (currentCircle == circlePlacement.length){
+        currentCircle = 0;
+      }
+      return true;
+    }
+  }
 
   // ### Lav kode, som håndterer generationer:
   // hvis det er første omgang, så lav en random generation via GA_CreateRandomGeneration()
   // ellers lav en forbedret generation
-
-
-  function GA_CreateNewPopulation()
+  function GA_Algo()
   {
-    console.log("New Population created");
 
-    // First time we must create a Random Generation.
-    // So we call this function the first time we run. The second time
-    // you should run the GA algoritm, that you have to create.
-    GA_CreateRandomGeneration();
+    const mutationRate = 0.3;
+    let newPopulation = [];
+
+    population.sort((a, b) => b.fitness - a.fitness);
+
+    population.slice(0, 2).forEach((car) => {
+      newPopulation.push(car);
+    });
+    lastGenWinners = newPopulation;
+    
+    population = []
+    
+    for (let i = 0; i < populationNumber; i++){
+      let newDriver = { chromosome: [], fitness: 0 , fitnessInProcent:0};
+      for (let j = 0; j < numberOfGenesInChromosome; j++){
+        let gene = newPopulation[(Math.random() < 0.5 ? 0 : 1)].chromosome[j]
+        gene = Math.random() < mutationRate ? getRandomNumber(2, 1) : gene;
+        newDriver.chromosome.push(gene);
+      }
+      population.push(newDriver);
+    }
+  
+    
+    activePopulation = -1;
+    generation++;
   }
 
+
+  function GA_CreateNewPopulation(){
+    if (generation == -1)  GA_CreateRandomGeneration();
+    else if (activePopulation >= 5) GA_Algo();
+    activePopulation++;
+  }
+  
   var population = [];
   var populationNumber = 6;
-  var numberOfGenesInChromosome = 4;
+  var numberOfGenesInChromosome = 3;
   function GA_CreateRandomGeneration()
   {
-    // This function is just started. I have added the most important ideas like
-    // an array that holde a population of chromosome. And also I added som chromosome objekt
-    // that hold the chromosome and its fitness.
+    console.log("Creating Random Generation");
+    
     population = [];
     for (var i = 0; i < populationNumber; i++)
     {
@@ -125,12 +193,18 @@
       }
       population.push(obj);
     }
+    generation++
+    console.log(population);
+    
   }
   function carCrashed()
   {
     ctx.fillText("Car has crashed", 10, 20);
-    //calculateFitnessForCar();
-    setTimeout(newGame, 1000);
+    population[activePopulation].fitness = currentFitness;
+    lastFitness = currentFitness;
+    currentFitness = 0;
+    currentCircle = 0;
+    setTimeout(newGame, 10);
   }
 
 
@@ -141,7 +215,10 @@
     ntx = canvas.getContext("2d");
     ntx.clearRect(0, 0, canvas.width, canvas.height);
     ntx.font = "bold 14px Arial";
-    ntx.fillText("Active population = " + activePopulation + " of " + populationNumber, 200, 20);
+    ntx.fillText("Active population = " + activePopulation + " of " + populationNumber + " Generation = " + generation , 200, 20);
+    ntx.fillText("Last car fitness: " + lastFitness,200, 40);
+    ntx.fillText("Current car genes: " + population[activePopulation].chromosome, 200, 60);
+    ntx.fillText("Last generation winners: " + lastGenWinners.map((car) => car.fitness), 200, 80);
   }
 
 </Script>
